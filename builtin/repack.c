@@ -877,6 +877,26 @@ int cmd_repack(int argc, const char **argv, const char *prefix)
 	if (pack_kept_objects < 0)
 		pack_kept_objects = write_bitmaps > 0 && !write_midx;
 
+	if (write_midx && write_bitmaps && geometric_factor && po_args.local) {
+		struct packed_git *p;
+
+		for (p = get_all_packs(the_repository); p; p = p->next) {
+			if (p->pack_local)
+				continue;
+
+			/*
+			 * When asked to do a local repack, but we have
+			 * packfiles that are inherited from an alternate, then
+			 * we cannot guarantee that the multi-pack-index would
+			 * have full coverage of all objects. We thus disable
+			 * writing bitmaps in that case.
+			 */
+			warning(_("disabling bitmap writing, as some objects are not being packed"));
+			write_bitmaps = 0;
+			break;
+		}
+	}
+
 	if (write_bitmaps && !(pack_everything & ALL_INTO_ONE) && !write_midx)
 		die(_(incremental_bitmap_conflict_error));
 
