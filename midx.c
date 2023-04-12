@@ -1308,6 +1308,12 @@ static int write_midx_internal(const char *object_dir,
 	for_each_file_in_pack_dir(object_dir, add_pack_to_midx, &ctx);
 	stop_progress(&ctx.progress);
 
+	if (!ctx.nr) {
+		error(_("no pack files to index."));
+		result = 1;
+		goto cleanup;
+	}
+
 	if ((ctx.m && ctx.nr == ctx.m->num_packs) &&
 	    !(packs_to_include || packs_to_drop)) {
 		struct bitmap_index *bitmap_git;
